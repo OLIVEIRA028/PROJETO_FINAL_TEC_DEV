@@ -18,7 +18,4 @@ O **Sistema de Controle de Zoológico** é uma aplicação desktop desenvolvida 
 - **Matplotlib**: Biblioteca para criação de gráficos e visualizações de dados.
 
 ## 🔧 Instalação e Execução
-1. **Clone o repositório**:
-   ```bash
-   git clone https://github.com/seu-usuario/zoolab.git
-   cd zoolab
+
