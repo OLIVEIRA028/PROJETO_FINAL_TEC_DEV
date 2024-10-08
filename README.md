@@ -1,6 +1,6 @@
 # 🦁 Sistema de Controle de Zoológico
 
-![Zoológico](https://via.placeholder.com/1200x300.png?text=Zool%C3%B3gico) <!-- Placeholder for a banner image -->
+![Zoológico](https://images.unsplash.com/photo-1512012902309-bb740c2e07d4) <!-- Placeholder for a banner image -->
 
 ## 📖 Descrição do Projeto
 O **Sistema de Controle de Zoológico** é uma aplicação desktop desenvolvida em Python que permite a gestão eficiente das operações de um zoológico. Com uma interface amigável e intuitiva, este software possibilita o cadastro de animais, controle de alimentação, gestão de bilheteria, monitoramento de métricas e até mesmo o gerenciamento de vendas na lanchonete.
