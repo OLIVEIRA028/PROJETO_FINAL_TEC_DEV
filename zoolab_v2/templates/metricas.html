@@ -1,0 +1,25 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<h2>Métricas do Zoológico</h2>
+<p>Total de Ingressos Vendidos: {{ total_ingressos }}</p>
+<p>Lucro Total: R$ {{ total_lucro }}</p>
+
+<h3>Animais Mais Visitados</h3>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Produto</th>
+            <th>Quantidade Vendida</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for animal in animais_populares %}
+        <tr>
+            <td>{{ animal[0] }}</td>
+            <td>{{ animal[1] }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

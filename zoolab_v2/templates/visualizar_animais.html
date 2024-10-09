@@ -1,0 +1,33 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<h2>Animais Cadastrados</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nome</th>
+            <th>Espécie</th>
+            <th>Idade</th>
+            <th>Habitat</th>
+            <th>Peso</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for animal in animais %}
+        <tr>
+            <td>{{ animal[0] }}</td>
+            <td>{{ animal[1] }}</td>
+            <td>{{ animal[2] }}</td>
+            <td>{{ animal[3] }}</td>
+            <td>{{ animal[4] }}</td>
+            <td>{{ animal[5] }}</td>
+            <td>
+                <a href="{{ url_for('editar_animal', id=animal[0]) }}" class="btn btn-warning">Editar</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
