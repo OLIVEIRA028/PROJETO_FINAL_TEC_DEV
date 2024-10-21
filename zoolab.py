@@ -121,17 +121,60 @@ def bilheteria():
         valor_unitario = valor_unitario_inteira if tipo_ingresso == 'inteira' else valor_unitario_meia
         valor_total = quantidade_ingressos * valor_unitario
 
-        # Registra a venda no banco de dados
-        with connect_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute('''INSERT INTO bilheteria (data, tipo_ingresso, quantidade_ingressos, valor_total)
-                              VALUES (?, ?, ?, ?)''', (today, tipo_ingresso, quantidade_ingressos, valor_total))
-            conn.commit()
+        # Adiciona o ingresso ao carrinho
+        if 'carrinho_bilheteria' not in session:
+            session['carrinho_bilheteria'] = []
 
-        flash("Venda registrada com sucesso!", "success")
+        # Verifica se o ingresso já está no carrinho
+        for item in session['carrinho_bilheteria']:
+            if item['tipo_ingresso'] == tipo_ingresso:
+                item['quantidade_ingressos'] += quantidade_ingressos
+                item['valor_total'] += valor_total
+                break
+        else:
+            # Adiciona novo ingresso ao carrinho
+            session['carrinho_bilheteria'].append({
+                'tipo_ingresso': tipo_ingresso,
+                'quantidade_ingressos': quantidade_ingressos,
+                'valor_unitario': valor_unitario,
+                'valor_total': valor_total
+            })
+
+        session.modified = True  # Marca a sessão como modificada
+        flash("Ingresso adicionado ao carrinho!", "success")
         return redirect(url_for('bilheteria'))
 
-    return render_template('bilheteria.html', today=today)
+    # Calcular o total geral do carrinho
+    total_geral = sum(item['valor_total'] for item in session.get('carrinho_bilheteria', []))
+
+    return render_template('bilheteria.html', today=today, carrinho_bilheteria=session.get('carrinho_bilheteria', []), total_geral=total_geral)
+
+# Rota para remover ingresso do carrinho
+@app.route('/remover_ingresso/<int:index>', methods=['POST'])
+def remover_ingresso(index):
+    if 'carrinho_bilheteria' in session:
+        session['carrinho_bilheteria'].pop(index)  # Remove o ingresso do carrinho
+        session.modified = True
+        flash("Ingresso removido do carrinho!", "success")
+    return redirect(url_for('bilheteria'))
+
+# Rota para registrar a venda da bilheteria
+@app.route('/registrar_venda_bilheteria', methods=['POST'])
+def registrar_venda_bilheteria():
+    carrinho_bilheteria = session.get('carrinho_bilheteria', [])
+    total_geral = sum(item['valor_total'] for item in carrinho_bilheteria) or 0
+    data_atual = datetime.today().strftime('%Y-%m-%d')  # Obtém a data atual
+
+    with connect_db() as conn:
+        cursor = conn.cursor()
+        for item in carrinho_bilheteria:
+            cursor.execute('''INSERT INTO bilheteria (tipo_ingresso, quantidade_ingressos, valor_total, data)
+                              VALUES (?, ?, ?, ?)''', (item['tipo_ingresso'], item['quantidade_ingressos'], item['valor_total'], data_atual))
+        conn.commit()
+
+    session.pop('carrinho_bilheteria', None)  # Limpa o carrinho da bilheteria
+    flash(f"Venda da bilheteria registrada com sucesso! Total: R$ {total_geral:.2f}", "success")
+    return redirect(url_for('bilheteria'))  # Redireciona de volta para a página de bilheteria
 
 # Cadastro de Alimentação
 @app.route('/animais/alimentacao', methods=['GET', 'POST'])
@@ -218,22 +261,6 @@ def visualizar_produtos():
         cursor.execute('SELECT * FROM produtos_lanchonete')
         produtos = cursor.fetchall()
 
-    if request.method == 'POST':
-        id_produto = request.form['id']  # Captura o ID do produto
-        nome = request.form['nome']
-        valor_unitario = request.form['valor_unitario']
-
-        if nome and valor_unitario.replace('.', '', 1).isdigit():
-            with connect_db() as conn:
-                cursor = conn.cursor()
-                cursor.execute('''UPDATE produtos_lanchonete SET nome = ?, valor_unitario = ?
-                                  WHERE id = ?''', (nome, valor_unitario, id_produto))
-                conn.commit()
-            flash("Produto atualizado com sucesso!", "success")
-            return redirect(url_for('visualizar_produtos'))
-        else:
-            flash("Preencha todos os campos corretamente!", "danger")
-
     return render_template('visualizar_produtos.html', produtos=produtos)
 
 # Rota para remover produtos
@@ -303,6 +330,8 @@ def remover_do_carrinho(index):
 # Rota para registrar a venda da lanchonete
 @app.route('/registrar_venda', methods=['POST'])
 def registrar_venda():
+    total_geral = sum(item['valor_total'] for item in session['carrinho'])  # Calcula o total
+
     with connect_db() as conn:
         cursor = conn.cursor()
         for item in session['carrinho']:
@@ -314,22 +343,8 @@ def registrar_venda():
         conn.commit()
 
     session.pop('carrinho', None)  # Limpa o carrinho após registrar a venda
-    flash("Venda registrada com sucesso!", "success")
+    flash(f"Venda registrada com sucesso! Total: R$ {total_geral:.2f}", "success")  # Exibe o total na mensagem
     return redirect(url_for('lanchonete'))
-
-# Rota para registrar a venda da bilheteria
-@app.route('/registrar_venda_bilheteria', methods=['POST'])
-def registrar_venda_bilheteria():
-    with connect_db() as conn:
-        cursor = conn.cursor()
-        for item in session['carrinho']:  # Usa o carrinho da bilheteria
-            cursor.execute('''INSERT INTO bilheteria (tipo_ingresso, quantidade_ingressos, valor_total)
-                              VALUES (?, ?, ?)''', (item['tipo_ingresso'], item['quantidade_ingressos'], item['valor_total']))
-        conn.commit()
-
-    session.pop('carrinho', None)  # Limpa o carrinho da bilheteria
-    flash("Venda da bilheteria registrada com sucesso!", "success")
-    return redirect(url_for('bilheteria'))  # Redireciona de volta para a página de bilheteria
 
 # Métricas
 @app.route('/metricas')
