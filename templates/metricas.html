@@ -2,10 +2,23 @@
 
 {% block content %}
 <h2>Métricas do Zoológico</h2>
-<p>Total de Ingressos Vendidos: {{ total_ingressos }}</p>
-<p>Lucro Total: R$ {{ total_lucro }}</p>
 
-<h3>Animais Mais Visitados</h3>
+<form method="POST" action="{{ url_for('metricas') }}">
+    <div class="form-group">
+        <label for="data_inicial">Data Inicial:</label>
+        <input type="date" class="form-control" id="data_inicial" name="data_inicial">
+    </div>
+    <div class="form-group">
+        <label for="data_final">Data Final:</label>
+        <input type="date" class="form-control" id="data_final" name="data_final">
+    </div>
+    <button type="submit" class="btn btn-primary">Filtrar</button>
+</form>
+
+<p>Total de Ingressos Vendidos: {{ total_ingressos }}</p>
+<p>Lucro Total: R$ {{ '{:.2f}'.format(total_lucro) }}</p>
+
+<h3>Produtos Mais Populares</h3>
 <table class="table">
     <thead>
         <tr>
@@ -14,10 +27,10 @@
         </tr>
     </thead>
     <tbody>
-        {% for animal in animais_populares %}
+        {% for produto in produtos_populares %}
         <tr>
-            <td>{{ animal[0] }}</td>
-            <td>{{ animal[1] }}</td>
+            <td>{{ produto[0] }}</td>
+            <td>{{ produto[1] }}</td>
         </tr>
         {% endfor %}
     </tbody>

@@ -192,7 +192,7 @@ def alimentacao():
     if request.method == 'POST':
         nome_animal = request.form['nome_animal']
         tipo_alimento = request.form['tipo_alimento']
-        quantidade = request.form['quantidade']
+        quantidade = request.form['quantidade']  # Mantido para alimentação
         hora = request.form['hora']  # Hora da alimentação
 
         if all([nome_animal, tipo_alimento, quantidade.replace('.', '', 1).isdigit(), hora]):
@@ -212,14 +212,18 @@ def alimentacao():
 @app.route('/lanchonete/produtos/cadastro', methods=['GET', 'POST'])
 def cadastro_produtos():
     if request.method == 'POST':
-        nome = request.form['nome']
-        valor_unitario = request.form['valor_unitario']
+        nome = request.form.get('nome')
+        valor_unitario = request.form.get('valor_unitario')
+        quantidade = request.form.get('quantidade', '0')  # Mantém como string
 
-        if nome and valor_unitario.replace('.', '', 1).isdigit():
+        if nome and valor_unitario and valor_unitario.replace('.', '', 1).isdigit() and quantidade.isdigit():
+            data_atual = datetime.today().strftime('%Y-%m-%d')  # Obtém a data atual
+
             with connect_db() as conn:
                 cursor = conn.cursor()
-                cursor.execute('''INSERT INTO produtos_lanchonete (nome, valor_unitario)
-                                  VALUES (?, ?)''', (nome, valor_unitario))
+                cursor.execute('''INSERT INTO produtos_lanchonete (nome, valor_unitario, quantidade, data)
+                                  VALUES (?, ?, ?, ?)''', (nome, valor_unitario, quantidade, data_atual))
+
                 conn.commit()
             flash("Produto cadastrado com sucesso!", "success")
             return redirect(url_for('cadastro_produtos'))
@@ -338,8 +342,8 @@ def registrar_venda():
             if 'id' not in item:
                 continue  # Pula itens sem ID
 
-            cursor.execute('''INSERT INTO lanchonete (produto, quantidade, valor_unitario, valor_total)
-                              VALUES (?, ?, ?, ?)''', (item['id'], item['quantidade'], item['valor_unitario'], item['valor_total']))
+            cursor.execute('''INSERT INTO lanchonete (produto, quantidade, valor_unitario, valor_total, data)
+                              VALUES (?, ?, ?, ?, ?)''', (item['id'], item['quantidade'], item['valor_unitario'], item['valor_total'], datetime.today().strftime('%Y-%m-%d')))
         conn.commit()
 
     session.pop('carrinho', None)  # Limpa o carrinho após registrar a venda
@@ -347,17 +351,35 @@ def registrar_venda():
     return redirect(url_for('lanchonete'))
 
 # Métricas
-@app.route('/metricas')
+@app.route('/metricas', methods=['GET', 'POST'])
 def metricas():
+    data_inicial = request.form.get('data_inicial')
+    data_final = request.form.get('data_final')
+
     with connect_db() as conn:
         cursor = conn.cursor()
-        cursor.execute('SELECT SUM(quantidade_ingressos) FROM bilheteria')
+        
+        # Total de ingressos e lucro
+        if data_inicial and data_final:
+            cursor.execute('''SELECT SUM(quantidade_ingressos) FROM bilheteria WHERE data BETWEEN ? AND ?''', (data_inicial, data_final))
+        else:
+            cursor.execute('SELECT SUM(quantidade_ingressos) FROM bilheteria')
+        
         total_ingressos = cursor.fetchone()[0] or 0
 
-        cursor.execute('SELECT SUM(valor_total) FROM bilheteria')
+        if data_inicial and data_final:
+            cursor.execute('''SELECT SUM(valor_total) FROM bilheteria WHERE data BETWEEN ? AND ?''', (data_inicial, data_final))
+        else:
+            cursor.execute('SELECT SUM(valor_total) FROM bilheteria')
+        
         total_lucro = cursor.fetchone()[0] or 0
 
-        cursor.execute('SELECT produto, SUM(quantidade) FROM lanchonete GROUP BY produto ORDER BY SUM(quantidade) DESC LIMIT 5')
+        # Produtos mais populares
+        if data_inicial and data_final:
+            cursor.execute('''SELECT produto, SUM(quantidade) FROM lanchonete WHERE data BETWEEN ? AND ? GROUP BY produto ORDER BY SUM(quantidade) DESC LIMIT 5''', (data_inicial, data_final))
+        else:
+            cursor.execute('SELECT produto, SUM(quantidade) FROM lanchonete GROUP BY produto ORDER BY SUM(quantidade) DESC LIMIT 5')
+        
         produtos_populares = cursor.fetchall()
 
     return render_template('metricas.html', total_ingressos=total_ingressos, total_lucro=total_lucro, produtos_populares=produtos_populares)

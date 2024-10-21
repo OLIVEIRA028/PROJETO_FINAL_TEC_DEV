@@ -23,11 +23,11 @@ def init_db():
             habitat TEXT,
             peso REAL)''')
         
-        # Tabela de Bilheteria (com coluna tipo_ingresso)
+        # Tabela de Bilheteria
         cursor.execute('''CREATE TABLE IF NOT EXISTS bilheteria (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             data TEXT NOT NULL,
-            tipo_ingresso TEXT NOT NULL,  -- Nova coluna
+            tipo_ingresso TEXT NOT NULL,
             quantidade_ingressos INTEGER NOT NULL,
             valor_total REAL NOT NULL)''')
         
@@ -38,7 +38,7 @@ def init_db():
             tipo_alimento TEXT NOT NULL,
             quantidade INTEGER NOT NULL,
             data TEXT NOT NULL,
-            hora TEXT NOT NULL)''')  # Adicionando a coluna hora
+            hora TEXT NOT NULL)''')
         
         # Tabela de Lanchonete
         cursor.execute('''CREATE TABLE IF NOT EXISTS lanchonete (
@@ -46,13 +46,17 @@ def init_db():
             produto TEXT NOT NULL,
             quantidade INTEGER NOT NULL,
             valor_unitario REAL NOT NULL,
-            valor_total REAL NOT NULL)''')
+            valor_total REAL NOT NULL,
+            data TEXT NOT NULL)''')
         
-        # Tabela de Produtos da Lanchonete
-        cursor.execute('''CREATE TABLE IF NOT EXISTS produtos_lanchonete (
+        # Dropar e recriar a tabela de Produtos da Lanchonete
+        cursor.execute('DROP TABLE IF EXISTS produtos_lanchonete')
+        cursor.execute('''CREATE TABLE produtos_lanchonete (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nome TEXT NOT NULL,
-            valor_unitario REAL NOT NULL)''')
+            valor_unitario REAL NOT NULL,
+            quantidade INTEGER NOT NULL,  -- Adicionando a coluna quantidade
+            data TEXT NOT NULL)''')
 
         # Tabela de Habitat
         cursor.execute('''CREATE TABLE IF NOT EXISTS habitat (
