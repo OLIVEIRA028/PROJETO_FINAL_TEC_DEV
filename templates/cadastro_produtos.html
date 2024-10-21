@@ -1,16 +1,16 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<h2>Cadastro de Produtos</h2>
+<h2>{% if produto %}Editar{% else %}Cadastrar{% endif %} Produto</h2>
 <form method="POST">
     <div class="form-group">
         <label for="nome">Nome do Produto:</label>
-        <input type="text" class="form-control" id="nome" name="nome" required>
+        <input type="text" class="form-control" id="nome" name="nome" value="{{ produto[1] if produto else '' }}" required>
     </div>
     <div class="form-group">
         <label for="valor_unitario">Valor Unitário:</label>
-        <input type="number" step="0.01" class="form-control" id="valor_unitario" name="valor_unitario" required>
+        <input type="number" step="0.01" class="form-control" id="valor_unitario" name="valor_unitario" value="{{ produto[2] if produto else '' }}" required>
     </div>
-    <button type="submit" class="btn btn-primary">Cadastrar</button>
+    <button type="submit" class="btn btn-primary">{% if produto %}Atualizar{% else %}Cadastrar{% endif %}</button>
 </form>
 {% endblock %}

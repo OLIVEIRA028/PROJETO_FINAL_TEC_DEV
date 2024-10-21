@@ -17,11 +17,19 @@
     </div>
     <div class="form-group">
         <label for="habitat">Habitat:</label>
-        <input type="text" class="form-control" id="habitat" name="habitat" required>
+        <select class="form-control" id="habitat" name="habitat" required>
+            {% for h in habitats %}
+                <option value="{{ h[0] }}">{{ h[1] }}</option>
+            {% endfor %}
+        </select>
     </div>
     <div class="form-group">
         <label for="peso">Peso:</label>
         <input type="number" step="0.01" class="form-control" id="peso" name="peso" required>
+    </div>
+    <div class="form-group">
+        <label for="tipos_alimento">Tipos de Alimento:</label>
+        <input type="text" class="form-control" id="tipos_alimento" name="tipos_alimento" placeholder="Separe os tipos por vírgula" required>
     </div>
     <button type="submit" class="btn btn-primary">Cadastrar</button>
 </form>

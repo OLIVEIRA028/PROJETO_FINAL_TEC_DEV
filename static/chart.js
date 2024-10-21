@@ -1,5 +1,3 @@
-// Inclua este arquivo se você estiver usando gráficos interativos
-// Exemplo básico de uso de Chart.js
 document.addEventListener('DOMContentLoaded', function () {
     var ctx = document.getElementById('myChart').getContext('2d');
     var myChart = new Chart(ctx, {

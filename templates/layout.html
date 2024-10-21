@@ -6,18 +6,39 @@
     <title>{% block title %}Zoolab{% endblock %}</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* Estilo para o submenu */
+        .dropdown:hover .dropdown-menu {
+            display: block;
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <a class="navbar-brand" href="{{ url_for('index') }}">Zoolab</a>
         <div class="collapse navbar-collapse">
             <ul class="navbar-nav mr-auto">
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('cadastro_animais') }}">Cadastro de Animais</a></li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="animaisDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Animais
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="animaisDropdown">
+                        <a class="dropdown-item" href="{{ url_for('cadastro_animais') }}">Cadastro de Animais</a>
+                        <a class="dropdown-item" href="{{ url_for('alimentacao') }}">Alimentação</a>
+                        <a class="dropdown-item" href="{{ url_for('visualizar_animais') }}">Visualizar Animais</a>
+                        <a class="dropdown-item" href="{{ url_for('cadastro_habitat') }}">Cadastro de Habitat</a>
+                    </div>
+                </li>
                 <li class="nav-item"><a class="nav-link" href="{{ url_for('bilheteria') }}">Bilheteria</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('alimentacao') }}">Alimentação</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('lanchonete') }}">Lanchonete</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('visualizar_produtos') }}">Visualizar Produtos</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('visualizar_animais') }}">Visualizar Animais</a></li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="lanchoneteDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Lanchonete
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="lanchoneteDropdown">
+                        <a class="dropdown-item" href="{{ url_for('visualizar_produtos') }}">Visualizar Produtos</a>
+                        <a class="dropdown-item" href="{{ url_for('lanchonete') }}">Controle de Lanchonete</a>
+                    </div>
+                </li>
                 <li class="nav-item"><a class="nav-link" href="{{ url_for('metricas') }}">Métricas</a></li>
             </ul>
         </div>
@@ -31,12 +52,11 @@
             {% endif %}
         {% endwith %}
         {% block content %}{% endblock %}
-        <!-- Canvas para o gráfico -->
         <canvas id="myChart" width="400" height="200"></canvas>
     </div>
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <script src="{{ url_for('static', filename='chart.js') }}"></script> <!-- Adicionando o Chart.js -->
+    <script src="{{ url_for('static', filename='chart.js') }}"></script>
 </body>
 </html>

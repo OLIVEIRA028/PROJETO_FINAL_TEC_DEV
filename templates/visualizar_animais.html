@@ -11,6 +11,7 @@
             <th>Idade</th>
             <th>Habitat</th>
             <th>Peso</th>
+            <th>Alimentação</th>
             <th>Ações</th>
         </tr>
     </thead>
@@ -23,6 +24,13 @@
             <td>{{ animal[3] }}</td>
             <td>{{ animal[4] }}</td>
             <td>{{ animal[5] }}</td>
+            <td>
+                <ul>
+                    {% for alimentacao in alimentacoes[animal[1]] %}
+                    <li>{{ alimentacao[0] }} - {{ alimentacao[1] }} kg em {{ alimentacao[2] }} às {{ alimentacao[3] }}</li>
+                    {% endfor %}
+                </ul>
+            </td>
             <td>
                 <a href="{{ url_for('editar_animal', id=animal[0]) }}" class="btn btn-warning">Editar</a>
             </td>

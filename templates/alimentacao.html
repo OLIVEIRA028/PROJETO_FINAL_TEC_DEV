@@ -5,19 +5,29 @@
 <form method="POST">
     <div class="form-group">
         <label for="nome_animal">Nome do Animal:</label>
-        <input type="text" class="form-control" id="nome_animal" name="nome_animal" required>
+        <select class="form-control" id="nome_animal" name="nome_animal" required>
+            <option value="">Selecione um animal</option>
+            {% for animal in animais %}
+                <option value="{{ animal[0] }}">{{ animal[0] }}</option>
+            {% endfor %}
+        </select>
     </div>
     <div class="form-group">
         <label for="tipo_alimento">Tipo de Alimento:</label>
-        <input type="text" class="form-control" id="tipo_alimento" name="tipo_alimento" required>
+        <select class="form-control" id="tipo_alimento" name="tipo_alimento" required>
+            <option value="">Selecione um tipo de alimento</option>
+            {% for tipo in tipos_alimento %}
+                <option value="{{ tipo[0] }}">{{ tipo[0] }}</option>
+            {% endfor %}
+        </select>
     </div>
     <div class="form-group">
-        <label for="quantidade">Quantidade:</label>
-        <input type="number" class="form-control" id="quantidade" name="quantidade" required>
+        <label for="quantidade">Quantidade (em kg):</label>
+        <input type="number" step="0.01" class="form-control" id="quantidade" name="quantidade" required>
     </div>
     <div class="form-group">
-        <label for="data">Data:</label>
-        <input type="date" class="form-control" id="data" name="data" required>
+        <label for="hora">Hora da Alimentação:</label>
+        <input type="time" class="form-control" id="hora" name="hora" required>
     </div>
     <button type="submit" class="btn btn-primary">Registrar</button>
 </form>

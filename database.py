@@ -1,4 +1,3 @@
-# database.py
 import sqlite3
 import os
 
@@ -24,10 +23,11 @@ def init_db():
             habitat TEXT,
             peso REAL)''')
         
-        # Tabela de Bilheteria
+        # Tabela de Bilheteria (com coluna tipo_ingresso)
         cursor.execute('''CREATE TABLE IF NOT EXISTS bilheteria (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             data TEXT NOT NULL,
+            tipo_ingresso TEXT NOT NULL,  -- Nova coluna
             quantidade_ingressos INTEGER NOT NULL,
             valor_total REAL NOT NULL)''')
         
@@ -37,7 +37,8 @@ def init_db():
             nome_animal TEXT NOT NULL,
             tipo_alimento TEXT NOT NULL,
             quantidade INTEGER NOT NULL,
-            data TEXT NOT NULL)''')
+            data TEXT NOT NULL,
+            hora TEXT NOT NULL)''')  # Adicionando a coluna hora
         
         # Tabela de Lanchonete
         cursor.execute('''CREATE TABLE IF NOT EXISTS lanchonete (
@@ -52,6 +53,18 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nome TEXT NOT NULL,
             valor_unitario REAL NOT NULL)''')
+
+        # Tabela de Habitat
+        cursor.execute('''CREATE TABLE IF NOT EXISTS habitat (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nome TEXT NOT NULL)''')
+
+        # Tabela de Tipos de Alimento
+        cursor.execute('''CREATE TABLE IF NOT EXISTS tipos_alimento (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            animal_id INTEGER NOT NULL,
+            tipo TEXT NOT NULL,
+            FOREIGN KEY (animal_id) REFERENCES animais (id) ON DELETE CASCADE)''')
         
         conn.commit()
 

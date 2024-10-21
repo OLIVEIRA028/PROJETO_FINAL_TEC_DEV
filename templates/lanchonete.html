@@ -13,8 +13,41 @@
     </div>
     <div class="form-group">
         <label for="quantidade">Quantidade:</label>
-        <input type="number" class="form-control" id="quantidade" name="quantidade" required>
+        <input type="number" class="form-control" id="quantidade" name="quantidade" required min="1">
     </div>
-    <button type="submit" class="btn btn-primary">Registrar Venda</button>
+    <button type="submit" class="btn btn-primary">Adicionar ao Carrinho</button>
 </form>
+
+<h3>Carrinho</h3>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Produto</th>
+            <th>Quantidade</th>
+            <th>Valor Unitário</th>
+            <th>Valor Total</th>
+            <th>Ação</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in carrinho %}
+        <tr>
+            <td>{{ item.nome }}</td>
+            <td>{{ item.quantidade }}</td>
+            <td>R$ {{ item.valor_unitario }}</td>
+            <td>R$ {{ item.valor_total }}</td>
+            <td>
+                <form action="{{ url_for('remover_do_carrinho', index=loop.index0) }}" method="POST" style="display:inline;">
+                    <button type="submit" class="btn btn-danger">Remover</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<h4>Valor Total: R$ <span id="valorTotal">{{ total_geral }}</span></h4>
+<form method="POST" action="{{ url_for('registrar_venda') }}">
+    <button type="submit" class="btn btn-success">Registrar Venda</button>
+</form>
+
 {% endblock %}
