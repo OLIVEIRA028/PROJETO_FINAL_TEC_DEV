@@ -351,7 +351,6 @@ def registrar_venda():
     return redirect(url_for('lanchonete'))
 
 # Métricas
-# Métricas
 @app.route('/metricas', methods=['GET', 'POST'])
 def metricas():
     data_inicial = request.form.get('data_inicial')
@@ -378,7 +377,7 @@ def metricas():
         # Produtos mais populares
         if data_inicial and data_final:
             cursor.execute('''
-                SELECT p.nome, SUM(l.quantidade) 
+                SELECT p.nome, SUM(l.quantidade), SUM(l.quantidade * p.valor_unitario) AS valor_total
                 FROM lanchonete l 
                 JOIN produtos_lanchonete p ON l.produto = p.id 
                 WHERE l.data BETWEEN ? AND ? 
@@ -388,17 +387,24 @@ def metricas():
             ''', (data_inicial, data_final))
         else:
             cursor.execute('''
-                SELECT p.nome, SUM(l.quantidade) 
+                SELECT p.nome, SUM(l.quantidade), SUM(l.quantidade * p.valor_unitario) AS valor_total
                 FROM lanchonete l 
                 JOIN produtos_lanchonete p ON l.produto = p.id 
                 GROUP BY p.nome 
                 ORDER BY SUM(l.quantidade) DESC 
                 LIMIT 5
             ''')
-        
+
         produtos_populares = cursor.fetchall()
 
-    return render_template('metricas.html', total_ingressos=total_ingressos, total_lucro=total_lucro, produtos_populares=produtos_populares)
+        # Calcular o valor total de produtos vendidos
+        valor_total_produtos = sum(produto[2] for produto in produtos_populares)
+
+    return render_template('metricas.html', 
+                           total_ingressos=total_ingressos, 
+                           total_lucro=total_lucro, 
+                           produtos_populares=produtos_populares, 
+                           valor_total_produtos=valor_total_produtos)
 
 # Inicializa o banco de dados e inicia o aplicativo
 if __name__ == '__main__':
