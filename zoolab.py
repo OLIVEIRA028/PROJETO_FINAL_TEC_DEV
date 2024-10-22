@@ -351,6 +351,7 @@ def registrar_venda():
     return redirect(url_for('lanchonete'))
 
 # Métricas
+# Métricas
 @app.route('/metricas', methods=['GET', 'POST'])
 def metricas():
     data_inicial = request.form.get('data_inicial')
@@ -358,27 +359,42 @@ def metricas():
 
     with connect_db() as conn:
         cursor = conn.cursor()
-        
+
         # Total de ingressos e lucro
         if data_inicial and data_final:
             cursor.execute('''SELECT SUM(quantidade_ingressos) FROM bilheteria WHERE data BETWEEN ? AND ?''', (data_inicial, data_final))
         else:
             cursor.execute('SELECT SUM(quantidade_ingressos) FROM bilheteria')
-        
+
         total_ingressos = cursor.fetchone()[0] or 0
 
         if data_inicial and data_final:
             cursor.execute('''SELECT SUM(valor_total) FROM bilheteria WHERE data BETWEEN ? AND ?''', (data_inicial, data_final))
         else:
             cursor.execute('SELECT SUM(valor_total) FROM bilheteria')
-        
+
         total_lucro = cursor.fetchone()[0] or 0
 
         # Produtos mais populares
         if data_inicial and data_final:
-            cursor.execute('''SELECT produto, SUM(quantidade) FROM lanchonete WHERE data BETWEEN ? AND ? GROUP BY produto ORDER BY SUM(quantidade) DESC LIMIT 5''', (data_inicial, data_final))
+            cursor.execute('''
+                SELECT p.nome, SUM(l.quantidade) 
+                FROM lanchonete l 
+                JOIN produtos_lanchonete p ON l.produto = p.id 
+                WHERE l.data BETWEEN ? AND ? 
+                GROUP BY p.nome 
+                ORDER BY SUM(l.quantidade) DESC 
+                LIMIT 5
+            ''', (data_inicial, data_final))
         else:
-            cursor.execute('SELECT produto, SUM(quantidade) FROM lanchonete GROUP BY produto ORDER BY SUM(quantidade) DESC LIMIT 5')
+            cursor.execute('''
+                SELECT p.nome, SUM(l.quantidade) 
+                FROM lanchonete l 
+                JOIN produtos_lanchonete p ON l.produto = p.id 
+                GROUP BY p.nome 
+                ORDER BY SUM(l.quantidade) DESC 
+                LIMIT 5
+            ''')
         
         produtos_populares = cursor.fetchall()
 
