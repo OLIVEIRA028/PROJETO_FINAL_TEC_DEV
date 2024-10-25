@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<h2>Habitats Cadastrados</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nome do Habitat</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for habitat in habitats %}
+        <tr>
+            <td>{{ habitat[0] }}</td>
+            <td>{{ habitat[1] }}</td>
+            <td>
+                <a href="{{ url_for('editar_habitat', id=habitat[0]) }}" class="btn btn-warning">Editar</a>
+                <form action="{{ url_for('remover_habitat', id=habitat[0]) }}" method="POST" style="display:inline;">
+                    <button type="submit" class="btn btn-danger" onclick="return confirm('Tem certeza que deseja remover este habitat?');">Remover</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<a href="{{ url_for('cadastro_habitat') }}" class="btn btn-primary">Cadastrar Novo Habitat</a>
+{% endblock %}

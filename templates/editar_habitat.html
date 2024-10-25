@@ -1,0 +1,15 @@
+{% extends 'layout.html' %}
+
+{% block title %}Editar Habitat{% endblock %}
+
+{% block content %}
+<h2>Editar Habitat</h2>
+<form method="POST" action="">
+    <div class="form-group">
+        <label for="nome_habitat">Nome do Habitat:</label>
+        <input type="text" class="form-control" id="nome_habitat" name="nome_habitat" value="{{ habitat[1] }}" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Atualizar</button>
+    <a href="{{ url_for('visualizar_habitats') }}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

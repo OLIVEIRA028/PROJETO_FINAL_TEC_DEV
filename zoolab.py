@@ -11,19 +11,6 @@ app.secret_key = "zoologico_secret"  # Chave secreta para mensagens de flash
 def index():
     return render_template('index.html')
 
-# Remover Animal
-@app.route('/animais/remover/<int:id>', methods=['POST'])
-def remover_animal(id):
-    with connect_db() as conn:
-        cursor = conn.cursor()
-        # Primeiro, removemos os tipos de alimento associados ao animal
-        cursor.execute('DELETE FROM tipos_alimento WHERE animal_id = ?', (id,))
-        # Depois, removemos o animal
-        cursor.execute('DELETE FROM animais WHERE id = ?', (id,))
-        conn.commit()
-    flash("Animal removido com sucesso!", "success")
-    return redirect(url_for('visualizar_animais'))
-
 # Cadastro de Animais
 @app.route('/animais/cadastro', methods=['GET', 'POST'])
 def cadastro_animais():
@@ -31,7 +18,7 @@ def cadastro_animais():
         nome = request.form['nome'].upper()
         especie = request.form['especie'].upper()
         idade = request.form['idade']
-        habitat = request.form['habitat'].upper()
+        habitat_id = request.form['habitat']  # Alterado para habitat_id
         peso = request.form['peso'].replace(',', '.')
         tipos_alimento = request.form['tipos_alimento'].upper().split(',')
 
@@ -42,7 +29,7 @@ def cadastro_animais():
             return redirect(url_for('cadastro_animais'))
 
         # Verifica se todos os campos estão preenchidos corretamente
-        if all([nome, especie, idade, habitat, peso is not None, tipos_alimento]):
+        if all([nome, especie, idade, habitat_id, peso is not None, tipos_alimento]):
             with connect_db() as conn:
                 cursor = conn.cursor()
 
@@ -50,8 +37,8 @@ def cadastro_animais():
                 cursor.execute('''SELECT * FROM animais WHERE nome = ? AND especie = ?''', (nome, especie))
                 if cursor.fetchone() is None:  # Se não houver duplicata
                     # Inserir o animal
-                    cursor.execute('''INSERT INTO animais (nome, especie, idade, habitat, peso)
-                                      VALUES (?, ?, ?, ?, ?)''', (nome, especie, idade, habitat, peso))
+                    cursor.execute('''INSERT INTO animais (nome, especie, idade, habitat_id, peso)
+                                      VALUES (?, ?, ?, ?, ?)''', (nome, especie, idade, habitat_id, peso))
                     animal_id = cursor.lastrowid  # Pega o ID do animal cadastrado
 
                     # Cadastra os tipos de alimento
@@ -76,6 +63,19 @@ def cadastro_animais():
 
     return render_template('cadastro_animais.html', habitats=habitats)
 
+# Remover Animal
+@app.route('/animais/remover/<int:id>', methods=['POST'])
+def remover_animal(id):
+    with connect_db() as conn:
+        cursor = conn.cursor()
+        # Primeiro, removemos os tipos de alimento associados ao animal
+        cursor.execute('DELETE FROM tipos_alimento WHERE animal_id = ?', (id,))
+        # Depois, removemos o animal
+        cursor.execute('DELETE FROM animais WHERE id = ?', (id,))
+        conn.commit()
+    flash("Animal removido com sucesso!", "success")
+    return redirect(url_for('visualizar_animais'))
+
 # Cadastro de Habitat
 @app.route('/habitat/cadastro', methods=['GET', 'POST'])
 def cadastro_habitat():
@@ -99,6 +99,56 @@ def cadastro_habitat():
 
     return render_template('cadastro_habitat.html')
 
+# Remover Habitat
+@app.route('/habitat/remover/<int:id>', methods=['POST'])
+def remover_habitat(id):
+    with connect_db() as conn:
+        cursor = conn.cursor()
+        
+        # Verifica se o habitat está associado a algum animal
+        cursor.execute('SELECT nome FROM animais WHERE habitat_id = ?', (id,))
+        animais_associados = cursor.fetchall()
+        
+        if animais_associados:
+            # Cria uma lista com os nomes dos animais associados
+            nomes_animais = ', '.join([animal[0] for animal in animais_associados])
+            flash(f"Não é possível remover o habitat, pois está associado aos seguintes animais: {nomes_animais}.", "danger")
+        else:
+            # Se não houver animais associados, remove o habitat
+            cursor.execute('DELETE FROM habitat WHERE id = ?', (id,))
+            conn.commit()
+            flash("Habitat removido com sucesso!", "success")
+    
+    return redirect(url_for('visualizar_habitats'))
+
+# Editar Habitat
+@app.route('/habitat/editar/<int:id>', methods=['GET', 'POST'])
+def editar_habitat(id):
+    with connect_db() as conn:
+        cursor = conn.cursor()
+        
+        if request.method == 'POST':
+            novo_nome = request.form['nome_habitat'].upper()
+            cursor.execute('UPDATE habitat SET nome = ? WHERE id = ?', (novo_nome, id))
+            conn.commit()
+            flash("Habitat atualizado com sucesso!", "success")
+            return redirect(url_for('visualizar_habitats'))
+
+        # Obter dados do habitat para preencher o formulário
+        cursor.execute('SELECT * FROM habitat WHERE id = ?', (id,))
+        habitat = cursor.fetchone()
+
+    return render_template('editar_habitat.html', habitat=habitat)
+
+# Visualização dos habitats
+@app.route('/habitat/visualizar', methods=['GET'])
+def visualizar_habitats():
+    with connect_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM habitat')
+        habitats = cursor.fetchall()
+    
+    return render_template('visualizar_habitats.html', habitats=habitats)
 
 # Visualização de Animais
 @app.route('/animais/visualizar')
@@ -139,7 +189,7 @@ def editar_animal(id):
         nome = request.form['nome'].upper()  
         especie = request.form['especie'].upper()  
         idade = request.form['idade']
-        habitat = request.form['habitat'].upper() 
+        habitat_id = request.form['habitat']  # Alterado para habitat_id
         peso = request.form['peso'].strip()  # Mantém o valor original e remove espaços
 
         try:
@@ -147,15 +197,15 @@ def editar_animal(id):
         except ValueError:
             peso = 0.0  # Define um valor padrão caso a conversão falhe
 
-        if all([nome, especie, idade, habitat, peso >= 0]):  # Verifica se o peso é não-negativo
+        if all([nome, especie, idade, habitat_id, peso >= 0]):  # Verifica se o peso é não-negativo
             with connect_db() as conn:
                 cursor = conn.cursor()
 
                 # Verifica se já existe outro animal com o mesmo nome e espécie
                 cursor.execute('''SELECT * FROM animais WHERE nome = ? AND especie = ? AND id != ?''', (nome, especie, id))
                 if cursor.fetchone() is None:  # Se não houver duplicata
-                    cursor.execute('''UPDATE animais SET nome = ?, especie = ?, idade = ?, habitat = ?, peso = ?
-                                      WHERE id = ?''', (nome, especie, idade, habitat, peso, id))
+                    cursor.execute('''UPDATE animais SET nome = ?, especie = ?, idade = ?, habitat_id = ?, peso = ?
+                                      WHERE id = ?''', (nome, especie, idade, habitat_id, peso, id))
                     conn.commit()
                     flash("Animal atualizado com sucesso!", "success")
                     return redirect(url_for('visualizar_animais'))
@@ -202,8 +252,18 @@ def alimentacao():
 @app.route('/bilheteria', methods=['GET', 'POST'])
 def bilheteria():
     today = datetime.today().strftime('%d-%m-%Y')
-    valor_unitario_inteira = 19.99
-    valor_unitario_meia = valor_unitario_inteira / 2  # 50% do valor
+
+    # Conectar ao banco de dados e buscar os valores
+    with connect_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT valor_unitario_inteira, valor_unitario_meia FROM configuracoes WHERE id = 1")
+        valores = cursor.fetchone()
+        
+        if valores:
+            valor_unitario_inteira, valor_unitario_meia = valores
+        else:
+            valor_unitario_inteira = 19.99
+            valor_unitario_meia = valor_unitario_inteira / 2
 
     if request.method == 'POST':
         quantidade_ingressos = int(request.form['quantidade_ingressos'])
@@ -266,6 +326,38 @@ def registrar_venda_bilheteria():
     session.pop('carrinho_bilheteria', None)  # Limpa o carrinho da bilheteria
     flash(f"Venda da bilheteria registrada com sucesso! Total: R$ {total_geral:.2f}", "success")
     return redirect(url_for('bilheteria'))  # Redireciona de volta para a página de bilheteria
+
+# Alteração de Valores Bilheteria
+@app.route('/gerenciar_valores', methods=['GET', 'POST'])
+def gerenciar_valores():
+    # Conectar ao banco de dados
+    with connect_db() as conn:
+        cursor = conn.cursor()
+        
+        # Buscar os valores atuais do banco de dados
+        cursor.execute("SELECT valor_unitario_inteira, valor_unitario_meia FROM configuracoes WHERE id = 1")
+        valores = cursor.fetchone()
+        
+        if valores:
+            valor_unitario_inteira, valor_unitario_meia = valores
+        else:
+            # Se não existir, use valores padrão
+            valor_unitario_inteira = 19.99
+            valor_unitario_meia = valor_unitario_inteira / 2
+
+        if request.method == 'POST':
+            novo_valor_inteira = float(request.form['valor_inteira'])
+            novo_valor_meia = novo_valor_inteira / 2
+
+            # Atualizar valores no banco de dados
+            cursor.execute("UPDATE configuracoes SET valor_unitario_inteira = ?, valor_unitario_meia = ? WHERE id = 1",
+                           (novo_valor_inteira, novo_valor_meia))
+            conn.commit()
+
+            flash("Valores atualizados com sucesso!", "success")
+            return redirect(url_for('bilheteria'))
+
+    return render_template('bilheteria_valores.html', valor_inteira=valor_unitario_inteira)
 
 
 # Cadastro de Produtos

@@ -1,0 +1,13 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<h2>Gerenciar Valores de Ingressos</h2>
+<form method="POST">
+    <div class="form-group">
+        <label for="valor_inteira">Novo Valor Inteira:</label>
+        <input type="number" step="0.01" class="form-control" id="valor_inteira" name="valor_inteira" value="{{ valor_inteira }}" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Atualizar Valor</button>
+</form>
+<a href="{{ url_for('bilheteria') }}" class="btn btn-secondary" style="margin-top: 10px;">Voltar</a>
+{% endblock %}
