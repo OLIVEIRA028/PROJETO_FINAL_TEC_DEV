@@ -353,7 +353,7 @@ def lanchonete():
         produtos = cursor.fetchall()
 
     if request.method == 'POST':
-        produto_id = int(request.form['produto'])  # Certifique-se de que seja um inteiro
+        produto_id = int(request.form['produto']) 
         quantidade = int(request.form['quantidade'])
 
         with connect_db() as conn:
