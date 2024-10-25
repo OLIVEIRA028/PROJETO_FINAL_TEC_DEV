@@ -11,33 +11,63 @@ app.secret_key = "zoologico_secret"  # Chave secreta para mensagens de flash
 def index():
     return render_template('index.html')
 
+# Remover Animal
+@app.route('/animais/remover/<int:id>', methods=['POST'])
+def remover_animal(id):
+    with connect_db() as conn:
+        cursor = conn.cursor()
+        # Primeiro, removemos os tipos de alimento associados ao animal
+        cursor.execute('DELETE FROM tipos_alimento WHERE animal_id = ?', (id,))
+        # Depois, removemos o animal
+        cursor.execute('DELETE FROM animais WHERE id = ?', (id,))
+        conn.commit()
+    flash("Animal removido com sucesso!", "success")
+    return redirect(url_for('visualizar_animais'))
+
 # Cadastro de Animais
 @app.route('/animais/cadastro', methods=['GET', 'POST'])
 def cadastro_animais():
     if request.method == 'POST':
-        nome = request.form['nome']
-        especie = request.form['especie']
+        nome = request.form['nome'].upper()
+        especie = request.form['especie'].upper()
         idade = request.form['idade']
-        habitat = request.form['habitat']
-        peso = request.form['peso']
-        tipos_alimento = request.form['tipos_alimento'].split(',')
+        habitat = request.form['habitat'].upper()
+        peso = request.form['peso'].replace(',', '.')
+        tipos_alimento = request.form['tipos_alimento'].upper().split(',')
 
-        if all([nome, especie, idade, habitat, peso, tipos_alimento]):
+        try:
+            peso = float(peso)
+        except ValueError:
+            flash("Peso inválido. Por favor, insira um número válido.", "danger")
+            return redirect(url_for('cadastro_animais'))
+
+        # Verifica se todos os campos estão preenchidos corretamente
+        if all([nome, especie, idade, habitat, peso is not None, tipos_alimento]):
             with connect_db() as conn:
                 cursor = conn.cursor()
-                cursor.execute('''INSERT INTO animais (nome, especie, idade, habitat, peso)
-                                  VALUES (?, ?, ?, ?, ?)''', (nome, especie, idade, habitat, peso))
-                animal_id = cursor.lastrowid  # Pega o ID do animal cadastrado
 
-                # Cadastra os tipos de alimento
-                for tipo in tipos_alimento:
-                    cursor.execute('''INSERT INTO tipos_alimento (animal_id, tipo) VALUES (?, ?)''', (animal_id, tipo.strip()))
+                # Verifica se o animal já existe
+                cursor.execute('''SELECT * FROM animais WHERE nome = ? AND especie = ?''', (nome, especie))
+                if cursor.fetchone() is None:  # Se não houver duplicata
+                    # Inserir o animal
+                    cursor.execute('''INSERT INTO animais (nome, especie, idade, habitat, peso)
+                                      VALUES (?, ?, ?, ?, ?)''', (nome, especie, idade, habitat, peso))
+                    animal_id = cursor.lastrowid  # Pega o ID do animal cadastrado
 
-                conn.commit()
-            flash("Animal cadastrado com sucesso!", "success")
-            return redirect(url_for('cadastro_animais'))
-        else:
-            flash("Preencha todos os campos!", "danger")
+                    # Cadastra os tipos de alimento
+                    tipos_cadastrados = set()
+                    for tipo in tipos_alimento:
+                        tipo = tipo.strip()
+                        if tipo not in tipos_cadastrados: 
+                            # Verifica se o tipo de alimento já está associado a algum animal
+                            cursor.execute('''SELECT * FROM tipos_alimento WHERE tipo = ?''', (tipo,))
+                            if not cursor.fetchone():  # Se o tipo de alimento não existir em nenhum animal, insere
+                                cursor.execute('''INSERT INTO tipos_alimento (animal_id, tipo) VALUES (?, ?)''', (animal_id, tipo))
+                                tipos_cadastrados.add(tipo)
+                    conn.commit()
+                    flash("Animal cadastrado com sucesso!", "success")
+                else:
+                    flash("Este animal já está cadastrado!", "danger")
 
     with connect_db() as conn:
         cursor = conn.cursor()
@@ -50,18 +80,25 @@ def cadastro_animais():
 @app.route('/habitat/cadastro', methods=['GET', 'POST'])
 def cadastro_habitat():
     if request.method == 'POST':
-        nome_habitat = request.form['nome_habitat']
+        nome_habitat = request.form['nome_habitat'].upper()
         if nome_habitat:
             with connect_db() as conn:
                 cursor = conn.cursor()
-                cursor.execute('''INSERT INTO habitat (nome) VALUES (?)''', (nome_habitat,))
-                conn.commit()
-            flash("Habitat cadastrado com sucesso!", "success")
-            return redirect(url_for('cadastro_habitat'))
+                
+                # Verifica se o habitat já existe
+                cursor.execute('''SELECT * FROM habitat WHERE nome = ?''', (nome_habitat,))
+                if cursor.fetchone() is None:  # Se não houver duplicata
+                    cursor.execute('''INSERT INTO habitat (nome) VALUES (?)''', (nome_habitat,))
+                    conn.commit()
+                    flash("Habitat cadastrado com sucesso!", "success")
+                else:
+                    flash("Habitat já cadastrado!", "danger")
+                return redirect(url_for('cadastro_habitat'))
         else:
             flash("Preencha todos os campos!", "danger")
 
     return render_template('cadastro_habitat.html')
+
 
 # Visualização de Animais
 @app.route('/animais/visualizar')
@@ -79,6 +116,17 @@ def visualizar_animais():
 
     return render_template('visualizar_animais.html', animais=animais, alimentacoes=alimentacoes)
 
+# Remover Animal
+@app.route('/animais/remover/<int:id>', methods=['POST'])
+def remover_animal_por_id(id):
+    with connect_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM tipos_alimento WHERE animal_id = ?', (id,))
+        cursor.execute('DELETE FROM animais WHERE id = ?', (id,))
+        conn.commit()
+    flash("Animal removido com sucesso!", "success")
+    return redirect(url_for('visualizar_animais'))
+
 # Edição de Animais
 @app.route('/animais/editar/<int:id>', methods=['GET', 'POST'])
 def editar_animal(id):
@@ -88,29 +136,72 @@ def editar_animal(id):
         animal = cursor.fetchone()
 
     if request.method == 'POST':
-        nome = request.form['nome']
-        especie = request.form['especie']
+        nome = request.form['nome'].upper()  
+        especie = request.form['especie'].upper()  
         idade = request.form['idade']
-        habitat = request.form['habitat']
-        peso = request.form['peso']
+        habitat = request.form['habitat'].upper() 
+        peso = request.form['peso'].strip()  # Mantém o valor original e remove espaços
 
-        if all([nome, especie, idade, habitat, peso]):
+        try:
+            peso = float(peso.replace(',', '.')) 
+        except ValueError:
+            peso = 0.0  # Define um valor padrão caso a conversão falhe
+
+        if all([nome, especie, idade, habitat, peso >= 0]):  # Verifica se o peso é não-negativo
             with connect_db() as conn:
                 cursor = conn.cursor()
-                cursor.execute('''UPDATE animais SET nome = ?, especie = ?, idade = ?, habitat = ?, peso = ?
-                                  WHERE id = ?''', (nome, especie, idade, habitat, peso, id))
-                conn.commit()
-            flash("Animal atualizado com sucesso!", "success")
-            return redirect(url_for('visualizar_animais'))
+
+                # Verifica se já existe outro animal com o mesmo nome e espécie
+                cursor.execute('''SELECT * FROM animais WHERE nome = ? AND especie = ? AND id != ?''', (nome, especie, id))
+                if cursor.fetchone() is None:  # Se não houver duplicata
+                    cursor.execute('''UPDATE animais SET nome = ?, especie = ?, idade = ?, habitat = ?, peso = ?
+                                      WHERE id = ?''', (nome, especie, idade, habitat, peso, id))
+                    conn.commit()
+                    flash("Animal atualizado com sucesso!", "success")
+                    return redirect(url_for('visualizar_animais'))
+                else:
+                    flash("Já existe um animal cadastrado com este nome e espécie!", "danger")
         else:
-            flash("Preencha todos os campos!", "danger")
+            flash("Preencha todos os campos corretamente!", "danger")
 
     return render_template('editar_animal.html', animal=animal)
+
+# Cadastro de Alimentação
+@app.route('/animais/alimentacao', methods=['GET', 'POST'])
+def alimentacao():
+    today = datetime.today().strftime('%d-%m-%Y')
+    with connect_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute('SELECT nome FROM animais')
+        animais = cursor.fetchall()
+
+        # Busca os tipos de alimento cadastrados
+        cursor.execute('SELECT tipo FROM tipos_alimento')
+        tipos_alimento = cursor.fetchall()
+
+    if request.method == 'POST':
+        nome_animal = request.form['nome_animal']
+        tipo_alimento = request.form['tipo_alimento']
+        quantidade = request.form['quantidade']  # Mantido para alimentação
+        hora = request.form['hora']  # Hora da alimentação
+
+        if all([nome_animal, tipo_alimento, quantidade.replace('.', '', 1).isdigit(), hora]):
+            with connect_db() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''INSERT INTO alimentacao (nome_animal, tipo_alimento, quantidade, data, hora)
+                                  VALUES (?, ?, ?, ?, ?)''', (nome_animal, tipo_alimento, quantidade, today, hora))
+                conn.commit()
+            flash("Alimentação registrada com sucesso!", "success")
+            return redirect(url_for('alimentacao'))
+        else:
+            flash("Preencha todos os campos corretamente!", "danger")
+
+    return render_template('alimentacao.html', animais=animais, tipos_alimento=tipos_alimento)
 
 # Cadastro de Bilheteria
 @app.route('/bilheteria', methods=['GET', 'POST'])
 def bilheteria():
-    today = datetime.today().strftime('%Y-%m-%d')
+    today = datetime.today().strftime('%d-%m-%Y')
     valor_unitario_inteira = 19.99
     valor_unitario_meia = valor_unitario_inteira / 2  # 50% do valor
 
@@ -163,7 +254,7 @@ def remover_ingresso(index):
 def registrar_venda_bilheteria():
     carrinho_bilheteria = session.get('carrinho_bilheteria', [])
     total_geral = sum(item['valor_total'] for item in carrinho_bilheteria) or 0
-    data_atual = datetime.today().strftime('%Y-%m-%d')  # Obtém a data atual
+    data_atual = datetime.today().strftime('%d-%m-%Y')  # Obtém a data atual
 
     with connect_db() as conn:
         cursor = conn.cursor()
@@ -176,57 +267,30 @@ def registrar_venda_bilheteria():
     flash(f"Venda da bilheteria registrada com sucesso! Total: R$ {total_geral:.2f}", "success")
     return redirect(url_for('bilheteria'))  # Redireciona de volta para a página de bilheteria
 
-# Cadastro de Alimentação
-@app.route('/animais/alimentacao', methods=['GET', 'POST'])
-def alimentacao():
-    today = datetime.today().strftime('%Y-%m-%d')
-    with connect_db() as conn:
-        cursor = conn.cursor()
-        cursor.execute('SELECT nome FROM animais')
-        animais = cursor.fetchall()
-
-        # Busca os tipos de alimento cadastrados
-        cursor.execute('SELECT tipo FROM tipos_alimento')
-        tipos_alimento = cursor.fetchall()
-
-    if request.method == 'POST':
-        nome_animal = request.form['nome_animal']
-        tipo_alimento = request.form['tipo_alimento']
-        quantidade = request.form['quantidade']  # Mantido para alimentação
-        hora = request.form['hora']  # Hora da alimentação
-
-        if all([nome_animal, tipo_alimento, quantidade.replace('.', '', 1).isdigit(), hora]):
-            with connect_db() as conn:
-                cursor = conn.cursor()
-                cursor.execute('''INSERT INTO alimentacao (nome_animal, tipo_alimento, quantidade, data, hora)
-                                  VALUES (?, ?, ?, ?, ?)''', (nome_animal, tipo_alimento, quantidade, today, hora))
-                conn.commit()
-            flash("Alimentação registrada com sucesso!", "success")
-            return redirect(url_for('alimentacao'))
-        else:
-            flash("Preencha todos os campos corretamente!", "danger")
-
-    return render_template('alimentacao.html', animais=animais, tipos_alimento=tipos_alimento)
 
 # Cadastro de Produtos
 @app.route('/lanchonete/produtos/cadastro', methods=['GET', 'POST'])
 def cadastro_produtos():
     if request.method == 'POST':
-        nome = request.form.get('nome')
+        nome = request.form.get('nome').upper()  # Converte para maiúsculas
         valor_unitario = request.form.get('valor_unitario')
         quantidade = request.form.get('quantidade', '0')  # Mantém como string
 
         if nome and valor_unitario and valor_unitario.replace('.', '', 1).isdigit() and quantidade.isdigit():
-            data_atual = datetime.today().strftime('%Y-%m-%d')  # Obtém a data atual
-
             with connect_db() as conn:
                 cursor = conn.cursor()
-                cursor.execute('''INSERT INTO produtos_lanchonete (nome, valor_unitario, quantidade, data)
-                                  VALUES (?, ?, ?, ?)''', (nome, valor_unitario, quantidade, data_atual))
-
-                conn.commit()
-            flash("Produto cadastrado com sucesso!", "success")
-            return redirect(url_for('cadastro_produtos'))
+                
+                # Verifica se o produto já existe
+                cursor.execute('SELECT * FROM produtos_lanchonete WHERE nome = ?', (nome,))
+                if cursor.fetchone() is not None:
+                    flash("Produto já cadastrado!", "danger")
+                else:
+                    data_atual = datetime.today().strftime('%Y-%m-%d')  # Obtém a data atual
+                    cursor.execute('''INSERT INTO produtos_lanchonete (nome, valor_unitario, quantidade, data)
+                                      VALUES (?, ?, ?, ?)''', (nome, valor_unitario, quantidade, data_atual))
+                    conn.commit()
+                    flash("Produto cadastrado com sucesso!", "success")
+                    return redirect(url_for('cadastro_produtos'))
         else:
             flash("Preencha todos os campos corretamente!", "danger")
 
@@ -241,7 +305,7 @@ def editar_produto(id):
         produto = cursor.fetchone()
 
     if request.method == 'POST':
-        nome = request.form['nome']
+        nome = request.form['nome'].upper()  # Converte para maiúsculas
         valor_unitario = request.form['valor_unitario']
 
         if nome and valor_unitario.replace('.', '', 1).isdigit():
@@ -350,7 +414,7 @@ def registrar_venda():
     flash(f"Venda registrada com sucesso! Total: R$ {total_geral:.2f}", "success")  # Exibe o total na mensagem
     return redirect(url_for('lanchonete'))
 
-# Métricas
+#Métricas
 @app.route('/metricas', methods=['GET', 'POST'])
 def metricas():
     data_inicial = request.form.get('data_inicial')
@@ -361,11 +425,23 @@ def metricas():
 
         # Total de ingressos e lucro
         if data_inicial and data_final:
-            cursor.execute('''SELECT SUM(quantidade_ingressos) FROM bilheteria WHERE data BETWEEN ? AND ?''', (data_inicial, data_final))
+            cursor.execute('''
+                SELECT SUM(quantidade_ingressos),
+                       SUM(CASE WHEN tipo_ingresso = 'Inteiro' THEN quantidade_ingressos ELSE 0 END) AS total_inteiros,
+                       SUM(CASE WHEN tipo_ingresso = 'Meia' THEN quantidade_ingressos ELSE 0 END) AS total_meias
+                FROM bilheteria
+                WHERE data BETWEEN ? AND ?''', (data_inicial, data_final))
         else:
-            cursor.execute('SELECT SUM(quantidade_ingressos) FROM bilheteria')
+            cursor.execute('''
+                SELECT SUM(quantidade_ingressos),
+                       SUM(CASE WHEN tipo_ingresso = 'Inteiro' THEN quantidade_ingressos ELSE 0 END) AS total_inteiros,
+                       SUM(CASE WHEN tipo_ingresso = 'Meia' THEN quantidade_ingressos ELSE 0 END) AS total_meias
+                FROM bilheteria''')
 
-        total_ingressos = cursor.fetchone()[0] or 0
+        total_ingressos, total_inteiros, total_meias = cursor.fetchone()
+        total_ingressos = total_ingressos or 0
+        total_inteiros = total_inteiros or 0
+        total_meias = total_meias or 0
 
         if data_inicial and data_final:
             cursor.execute('''SELECT SUM(valor_total) FROM bilheteria WHERE data BETWEEN ? AND ?''', (data_inicial, data_final))
@@ -378,20 +454,20 @@ def metricas():
         if data_inicial and data_final:
             cursor.execute('''
                 SELECT p.nome, SUM(l.quantidade), SUM(l.quantidade * p.valor_unitario) AS valor_total
-                FROM lanchonete l 
-                JOIN produtos_lanchonete p ON l.produto = p.id 
-                WHERE l.data BETWEEN ? AND ? 
-                GROUP BY p.nome 
-                ORDER BY SUM(l.quantidade) DESC 
+                FROM lanchonete l
+                JOIN produtos_lanchonete p ON l.produto = p.id
+                WHERE l.data BETWEEN ? AND ?
+                GROUP BY p.nome
+                ORDER BY SUM(l.quantidade) DESC
                 LIMIT 5
             ''', (data_inicial, data_final))
         else:
             cursor.execute('''
                 SELECT p.nome, SUM(l.quantidade), SUM(l.quantidade * p.valor_unitario) AS valor_total
-                FROM lanchonete l 
-                JOIN produtos_lanchonete p ON l.produto = p.id 
-                GROUP BY p.nome 
-                ORDER BY SUM(l.quantidade) DESC 
+                FROM lanchonete l
+                JOIN produtos_lanchonete p ON l.produto = p.id
+                GROUP BY p.nome
+                ORDER BY SUM(l.quantidade) DESC
                 LIMIT 5
             ''')
 
@@ -400,11 +476,17 @@ def metricas():
         # Calcular o valor total de produtos vendidos
         valor_total_produtos = sum(produto[2] for produto in produtos_populares)
 
-    return render_template('metricas.html', 
-                           total_ingressos=total_ingressos, 
-                           total_lucro=total_lucro, 
-                           produtos_populares=produtos_populares, 
-                           valor_total_produtos=valor_total_produtos)
+        # Calcular o lucro total do zoológico
+        lucro_total_zoo = total_lucro + valor_total_produtos
+
+    return render_template('metricas.html',
+                           total_ingressos=total_ingressos,
+                           total_inteiros=total_inteiros,
+                           total_meias=total_meias,
+                           total_lucro=total_lucro,
+                           produtos_populares=produtos_populares,
+                           valor_total_produtos=valor_total_produtos,
+                           lucro_total_zoo=lucro_total_zoo)
 
 # Inicializa o banco de dados e inicia o aplicativo
 if __name__ == '__main__':

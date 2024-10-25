@@ -1,4 +1,4 @@
-{% extends "layout.html" %}
+{% extends "layout.html" %} 
 
 {% block content %}
 <h2>Produtos Cadastrados</h2>
@@ -15,17 +15,12 @@
         {% for produto in produtos %}
         <tr>
             <td>{{ produto[0] }}</td>
+            <td>{{ produto[1] }}</td> 
+            <td>R$ {{ '{:.2f}'.format(produto[2]) }}</td>
             <td>
-                <form action="{{ url_for('visualizar_produtos') }}" method="POST" style="display:inline;">
-                    <input type="hidden" name="id" value="{{ produto[0] }}">
-                    <input type="text" name="nome" value="{{ produto[1] }}" required>
-            </td>
-            <td>
-                    <input type="text" name="valor_unitario" value="{{ produto[2] }}" required>
-                    <button type="submit" class="btn btn-warning">Salvar</button>
+                <form action="{{ url_for('editar_produto', id=produto[0]) }}" method="GET" style="display:inline;">
+                    <button type="submit" class="btn btn-warning">Editar</button>
                 </form>
-            </td>
-            <td>
                 <form action="{{ url_for('remover_produto', id=produto[0]) }}" method="POST" style="display:inline;">
                     <button type="submit" class="btn btn-danger" onclick="return confirm('Tem certeza que deseja remover este produto?');">Remover</button>
                 </form>

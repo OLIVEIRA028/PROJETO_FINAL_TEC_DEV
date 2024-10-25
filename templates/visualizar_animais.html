@@ -32,10 +32,16 @@
                 </ul>
             </td>
             <td>
-                <a href="{{ url_for('editar_animal', id=animal[0]) }}" class="btn btn-warning">Editar</a>
+                <form action="{{ url_for('editar_animal', id=animal[0]) }}" method="GET" style="display:inline;">
+                    <button type="submit" class="btn btn-warning">Editar</button>
+                </form>
+                <form action="{{ url_for('remover_animal', id=animal[0]) }}" method="POST" style="display:inline;">
+                    <button type="submit" class="btn btn-danger" onclick="return confirm('Tem certeza que deseja remover este animal?');">Remover</button>
+                </form>
             </td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
+<a href="{{ url_for('cadastro_animais') }}" class="btn btn-primary">Cadastrar Novo Animal</a>
 {% endblock %}

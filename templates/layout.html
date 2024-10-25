@@ -11,12 +11,20 @@
         .dropdown:hover .dropdown-menu {
             display: block;
         }
+        /* Canvas responsivo */
+        #myChart {
+            max-width: 100%;
+            height: auto;
+        }
     </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <a class="navbar-brand" href="{{ url_for('index') }}">Zoolab</a>
-        <div class="collapse navbar-collapse">
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav mr-auto">
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="animaisDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -24,8 +32,8 @@
                     </a>
                     <div class="dropdown-menu" aria-labelledby="animaisDropdown">
                         <a class="dropdown-item" href="{{ url_for('cadastro_animais') }}">Cadastro de Animais</a>
-                        <a class="dropdown-item" href="{{ url_for('alimentacao') }}">Alimentação</a>
-                        <a class="dropdown-item" href="{{ url_for('visualizar_animais') }}">Visualizar Animais</a>
+                        <a class="dropdown-item" href="{{ url_for('alimentacao') }}">Alimentação de Animais</a>
+                        <a class="dropdown-item" href="{{ url_for('visualizar_animais') }}">Visualizar Animais Cadastrados</a>
                         <a class="dropdown-item" href="{{ url_for('cadastro_habitat') }}">Cadastro de Habitat</a>
                     </div>
                 </li>
@@ -35,11 +43,11 @@
                         Lanchonete
                     </a>
                     <div class="dropdown-menu" aria-labelledby="lanchoneteDropdown">
-                        <a class="dropdown-item" href="{{ url_for('visualizar_produtos') }}">Visualizar Produtos</a>
-                        <a class="dropdown-item" href="{{ url_for('lanchonete') }}">Controle de Lanchonete</a>
+                        <a class="dropdown-item" href="{{ url_for('visualizar_produtos') }}">Visualizar Produtos / Cadastrar Produtos</a>
+                        <a class="dropdown-item" href="{{ url_for('lanchonete') }}">Gerenciar Lanchonete</a>
                     </div>
                 </li>
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('metricas') }}">Métricas</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('metricas') }}">Relatórios</a></li>
             </ul>
         </div>
     </nav>
@@ -52,7 +60,9 @@
             {% endif %}
         {% endwith %}
         {% block content %}{% endblock %}
-        <canvas id="myChart" width="400" height="200"></canvas>
+        <div class="my-4">
+            <canvas id="myChart"></canvas>
+        </div>
     </div>
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
