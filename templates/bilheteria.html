@@ -48,10 +48,15 @@
 </table>
 
 <h4>Total Geral: R$ {{ '{:.2f}'.format(total_geral) }}</h4>
-<form method="POST" action="{{ url_for('registrar_venda_bilheteria') }}">
-    <button type="submit" class="btn btn-success">Registrar Venda</button>
-</form>
 
-<a href="{{ url_for('gerenciar_valores') }}" class="btn btn-warning" style="margin-top: 10px;">Gerenciar Valores</a>
+<div class="button-group">
+    <form method="POST" action="{{ url_for('registrar_venda_bilheteria') }}">
+        <button type="submit" class="btn btn-success btn-left">Registrar Venda</button>
+    </form>
+</div>
+
+<div class="button-right">
+    <a href="{{ url_for('gerenciar_valores') }}" class="btn btn-warning">Gerenciar Valores</a>
+</div>
 
 {% endblock %}

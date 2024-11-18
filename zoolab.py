@@ -506,7 +506,6 @@ def registrar_venda():
     flash(f"Venda registrada com sucesso! Total: R$ {total_geral:.2f}", "success")  # Exibe o total na mensagem
     return redirect(url_for('lanchonete'))
 
-#Métricas
 @app.route('/metricas', methods=['GET', 'POST'])
 def metricas():
     data_inicial = request.form.get('data_inicial')
@@ -515,32 +514,28 @@ def metricas():
     with connect_db() as conn:
         cursor = conn.cursor()
 
-        # Total de ingressos e lucro
+        # Detalhes dos ingressos vendidos
         if data_inicial and data_final:
             cursor.execute('''
-                SELECT SUM(quantidade_ingressos),
-                       SUM(CASE WHEN tipo_ingresso = 'Inteiro' THEN quantidade_ingressos ELSE 0 END) AS total_inteiros,
-                       SUM(CASE WHEN tipo_ingresso = 'Meia' THEN quantidade_ingressos ELSE 0 END) AS total_meias
+                SELECT tipo_ingresso, SUM(quantidade_ingressos) AS quantidade_total, 
+                       SUM(valor_total) AS valor_total
                 FROM bilheteria
-                WHERE data BETWEEN ? AND ?''', (data_inicial, data_final))
+                WHERE data BETWEEN ? AND ?
+                GROUP BY tipo_ingresso
+            ''', (data_inicial, data_final))
         else:
             cursor.execute('''
-                SELECT SUM(quantidade_ingressos),
-                       SUM(CASE WHEN tipo_ingresso = 'Inteiro' THEN quantidade_ingressos ELSE 0 END) AS total_inteiros,
-                       SUM(CASE WHEN tipo_ingresso = 'Meia' THEN quantidade_ingressos ELSE 0 END) AS total_meias
-                FROM bilheteria''')
+                SELECT tipo_ingresso, SUM(quantidade_ingressos) AS quantidade_total, 
+                       SUM(valor_total) AS valor_total
+                FROM bilheteria
+                GROUP BY tipo_ingresso
+            ''')
 
-        total_ingressos, total_inteiros, total_meias = cursor.fetchone()
-        total_ingressos = total_ingressos or 0
-        total_inteiros = total_inteiros or 0
-        total_meias = total_meias or 0
+        ingressos_detalhados = cursor.fetchall()
 
-        if data_inicial and data_final:
-            cursor.execute('''SELECT SUM(valor_total) FROM bilheteria WHERE data BETWEEN ? AND ?''', (data_inicial, data_final))
-        else:
-            cursor.execute('SELECT SUM(valor_total) FROM bilheteria')
-
-        total_lucro = cursor.fetchone()[0] or 0
+        # Calcular o lucro total de bilheteria
+        total_ingressos = sum(row[1] for row in ingressos_detalhados)
+        total_lucro = sum(row[2] for row in ingressos_detalhados)
 
         # Produtos mais populares
         if data_inicial and data_final:
@@ -572,9 +567,8 @@ def metricas():
         lucro_total_zoo = total_lucro + valor_total_produtos
 
     return render_template('metricas.html',
+                           ingressos_detalhados=ingressos_detalhados,
                            total_ingressos=total_ingressos,
-                           total_inteiros=total_inteiros,
-                           total_meias=total_meias,
                            total_lucro=total_lucro,
                            produtos_populares=produtos_populares,
                            valor_total_produtos=valor_total_produtos,

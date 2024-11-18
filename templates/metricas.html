@@ -15,26 +15,61 @@
     <button type="submit" class="btn btn-primary">Filtrar</button>
 </form>
 
-<p>Total de Ingressos Vendidos: {{ total_ingressos }}</p>
-<p>Lucro Total: R$ {{ '{:.2f}'.format(total_lucro) }}</p>
+<div class="metrics">
+    <h3>Total de Ingressos Vendidos</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Tipo de Ingresso</th>
+                <th>Quantidade Vendida</th>
+                <th>Valor Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ingresso in ingressos_detalhados %}
+            <tr>
+                <td>{{ ingresso[0] }}</td>
+                <td>{{ ingresso[1] }}</td>
+                <td>R$ {{ '{:.2f}'.format(ingresso[2]) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <th>Total</th>
+                <th>{{ total_ingressos }}</th>
+                <th>R$ {{ '{:.2f}'.format(total_lucro) }}</th>
+            </tr>
+        </tfoot>
+    </table>
+</div>
 
-<h3>Produtos Mais Populares</h3>
-<table class="table">
-    <thead>
-        <tr>
-            <th>Produto</th>
-            <th>Quantidade Vendida</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for produto in produtos_populares %}
-        <tr>
-            <td>{{ produto[0] }}</td>
-            <td>{{ produto[1] }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-
-<h4>Valor Total dos Produtos Vendidos: R$ {{ '{:.2f}'.format(valor_total_produtos) }}</h4>
+<div class="metrics">
+    <h3>Produtos Mais Vendidos</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Produto</th>
+                <th>Quantidade Vendida</th>
+                <th>Valor Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for produto in produtos_populares %}
+            <tr>
+                <td>{{ produto[0] }}</td>
+                <td>{{ produto[1] }}</td>
+                <td>R$ {{ '{:.2f}'.format(produto[2]) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <th>Total</th>
+                <th>{{ total_produtos }}</th>
+                <th>R$ {{ '{:.2f}'.format(valor_total_produtos) }}</th>
+            </tr>
+        </tfoot>
+    </table>
+</div>
 {% endblock %}
