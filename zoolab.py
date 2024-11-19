@@ -506,6 +506,7 @@ def registrar_venda():
     flash(f"Venda registrada com sucesso! Total: R$ {total_geral:.2f}", "success")  # Exibe o total na mensagem
     return redirect(url_for('lanchonete'))
 
+#Metricas
 @app.route('/metricas', methods=['GET', 'POST'])
 def metricas():
     data_inicial = request.form.get('data_inicial')
